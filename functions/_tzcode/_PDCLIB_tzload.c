@@ -10,6 +10,7 @@
 
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 static int_fast32_t detzcode( const char * codep )
@@ -662,8 +663,18 @@ static int tzloadbody( char const * name, struct state * sp, bool doextend, unio
 */
 int _PDCLIB_tzload( char const * name, struct state * sp, bool doextend )
 {
-    union local_storage ls;
-    return tzloadbody( name, sp, doextend, &ls );
+    /* Too large for the stack of an Xbox thread. */
+    union local_storage * lsp = malloc( sizeof( *lsp ) );
+    int rc;
+
+    if ( lsp == NULL )
+    {
+        return ENOMEM;
+    }
+
+    rc = tzloadbody( name, sp, doextend, lsp );
+    free( lsp );
+    return rc;
 }
 
 #endif
