@@ -9,7 +9,7 @@
 #ifndef REGTEST
 
 #include <xboxkrnl/xboxkrnl.h>
-#define NT_EPOCH_TIME_OFFSET ((LONGLONG)(369 * 365 + 89) * 24 * 3600)
+#include "pdclib/_PDCLIB_xbox_time.h"
 
 time_t time( time_t * timer )
 {
@@ -18,7 +18,7 @@ time_t time( time_t * timer )
 
     KeQuerySystemTime(&cur_time);
 
-    result = (time_t)((cur_time.QuadPart / 10000000) - NT_EPOCH_TIME_OFFSET);
+    result = (time_t)((cur_time.QuadPart / 10000000) - _PDCLIB_XBOX_EPOCH_OFFSET);
 
     if (timer != NULL)
     {

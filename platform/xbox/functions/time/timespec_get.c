@@ -10,6 +10,8 @@
 
 #include <xboxkrnl/xboxkrnl.h>
 
+#include "pdclib/_PDCLIB_xbox_time.h"
+
 int timespec_get( struct timespec * ts, int base )
 {
     if ( base == TIME_UTC )
@@ -18,7 +20,7 @@ int timespec_get( struct timespec * ts, int base )
 
         KeQuerySystemTime(&cur_time);
 
-        ts->tv_sec = cur_time.QuadPart / 10000000;
+        ts->tv_sec = (time_t)((cur_time.QuadPart / 10000000) - _PDCLIB_XBOX_EPOCH_OFFSET);
         ts->tv_nsec = (cur_time.QuadPart % 10000000) * 100;
 
         return base;
