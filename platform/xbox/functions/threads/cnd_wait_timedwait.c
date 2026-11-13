@@ -3,6 +3,8 @@
 #include <threads.h>
 #include <xboxkrnl/xboxkrnl.h>
 
+#include "pdclib/_PDCLIB_xbox_time.h"
+
 int _cnd_wait (cnd_t *cond, mtx_t *mtx, LARGE_INTEGER *timepoint)
 {
     NTSTATUS status;
@@ -45,7 +47,8 @@ int cnd_wait (cnd_t *cond, mtx_t *mtx)
 int cnd_timedwait (cnd_t *restrict cond, mtx_t *restrict mtx, const struct timespec *restrict ts)
 {
     LARGE_INTEGER timepoint;
-    timepoint.QuadPart = ((long long)ts->tv_sec)*10000000 + ((long long)ts->tv_nsec)/100;
+    // The kernel takes an absolute time counted from 1601
+    timepoint.QuadPart = ((long long)ts->tv_sec + _PDCLIB_XBOX_EPOCH_OFFSET)*10000000 + ((long long)ts->tv_nsec)/100;
     if (ts->tv_nsec % 100 != 0) timepoint.QuadPart++;
 
     return _cnd_wait(cond, mtx, &timepoint);
