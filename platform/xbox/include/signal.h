@@ -1,4 +1,4 @@
-/* Signal handling <string.h>
+/* Signal handling <signal.h>
 
    This file is part of the Public Domain C Library (PDCLib).
    Permission is granted to use, modify, and / or redistribute at will.
@@ -7,7 +7,7 @@
 #ifndef _PDCLIB_SIGNAL_H
 #define _PDCLIB_SIGNAL_H _PDCLIB_SIGNAL_H
 
-#include "pdclib/_PDCLIB_config.h"
+#include "pdclib/_PDCLIB_internal.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -56,7 +56,7 @@ extern "C" {
 #define SIG_ERR (void (*)( int ))-1
 #define SIG_IGN (void (*)( int ))1
 
-typedef _PDCLIB_sig_atomic sig_atomic_t;
+typedef _PDCLIB_sig_atomic_t sig_atomic_t;
 
 /* Installs a signal handler "func" for the given signal.
    A signal handler is a function that takes an integer as argument (the signal
