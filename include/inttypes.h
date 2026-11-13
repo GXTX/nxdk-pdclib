@@ -252,14 +252,12 @@ typedef struct _PDCLIB_imaxdiv_t imaxdiv_t;
 #if _PDCLIB_TWOS_COMPLEMENT == 1
 
 #if _PDCLIB_INT_LEAST8_MAX == 0x7f
-#if _PDCLIB_INT_LEAST8_MAX > _PDCLIB_INT_MAX
 #define PRId8 _PDCLIB_value2string( _PDCLIB_concat( _PDCLIB_INT_LEAST8_PREFIX, d ) )
 #define PRIi8 _PDCLIB_value2string( _PDCLIB_concat( _PDCLIB_INT_LEAST8_PREFIX, i ) )
 #define PRIo8 _PDCLIB_value2string( _PDCLIB_concat( _PDCLIB_INT_LEAST8_PREFIX, o ) )
 #define PRIu8 _PDCLIB_value2string( _PDCLIB_concat( _PDCLIB_INT_LEAST8_PREFIX, u ) )
 #define PRIx8 _PDCLIB_value2string( _PDCLIB_concat( _PDCLIB_INT_LEAST8_PREFIX, x ) )
 #define PRIX8 _PDCLIB_value2string( _PDCLIB_concat( _PDCLIB_INT_LEAST8_PREFIX, X ) )
-#endif
 #define SCNd8 _PDCLIB_value2string( _PDCLIB_concat( _PDCLIB_INT_LEAST8_PREFIX, d ) )
 #define SCNi8 _PDCLIB_value2string( _PDCLIB_concat( _PDCLIB_INT_LEAST8_PREFIX, i ) )
 #define SCNo8 _PDCLIB_value2string( _PDCLIB_concat( _PDCLIB_INT_LEAST8_PREFIX, o ) )
@@ -268,14 +266,12 @@ typedef struct _PDCLIB_imaxdiv_t imaxdiv_t;
 #endif
 
 #if _PDCLIB_INT_LEAST16_MAX == 0x7fff
-#if _PDCLIB_INT_LEAST16_MAX > _PDCLIB_INT_MAX
 #define PRId16 _PDCLIB_value2string( _PDCLIB_concat( _PDCLIB_INT_LEAST16_PREFIX, d ) )
 #define PRIi16 _PDCLIB_value2string( _PDCLIB_concat( _PDCLIB_INT_LEAST16_PREFIX, i ) )
 #define PRIo16 _PDCLIB_value2string( _PDCLIB_concat( _PDCLIB_INT_LEAST16_PREFIX, o ) )
 #define PRIu16 _PDCLIB_value2string( _PDCLIB_concat( _PDCLIB_INT_LEAST16_PREFIX, u ) )
 #define PRIx16 _PDCLIB_value2string( _PDCLIB_concat( _PDCLIB_INT_LEAST16_PREFIX, x ) )
 #define PRIX16 _PDCLIB_value2string( _PDCLIB_concat( _PDCLIB_INT_LEAST16_PREFIX, X ) )
-#endif
 #define SCNd16 _PDCLIB_value2string( _PDCLIB_concat( _PDCLIB_INT_LEAST16_PREFIX, d ) )
 #define SCNi16 _PDCLIB_value2string( _PDCLIB_concat( _PDCLIB_INT_LEAST16_PREFIX, i ) )
 #define SCNo16 _PDCLIB_value2string( _PDCLIB_concat( _PDCLIB_INT_LEAST16_PREFIX, o ) )
@@ -284,14 +280,12 @@ typedef struct _PDCLIB_imaxdiv_t imaxdiv_t;
 #endif
 
 #if _PDCLIB_INT_LEAST32_MAX == 0x7fffffffl
-#if _PDCLIB_INT_LEAST32_MAX > _PDCLIB_INT_MAX
 #define PRId32 _PDCLIB_value2string( _PDCLIB_concat( _PDCLIB_INT_LEAST32_PREFIX, d ) )
 #define PRIi32 _PDCLIB_value2string( _PDCLIB_concat( _PDCLIB_INT_LEAST32_PREFIX, i ) )
 #define PRIo32 _PDCLIB_value2string( _PDCLIB_concat( _PDCLIB_INT_LEAST32_PREFIX, o ) )
 #define PRIu32 _PDCLIB_value2string( _PDCLIB_concat( _PDCLIB_INT_LEAST32_PREFIX, u ) )
 #define PRIx32 _PDCLIB_value2string( _PDCLIB_concat( _PDCLIB_INT_LEAST32_PREFIX, x ) )
 #define PRIX32 _PDCLIB_value2string( _PDCLIB_concat( _PDCLIB_INT_LEAST32_PREFIX, X ) )
-#endif
 #define SCNd32 _PDCLIB_value2string( _PDCLIB_concat( _PDCLIB_INT_LEAST32_PREFIX, d ) )
 #define SCNi32 _PDCLIB_value2string( _PDCLIB_concat( _PDCLIB_INT_LEAST32_PREFIX, i ) )
 #define SCNo32 _PDCLIB_value2string( _PDCLIB_concat( _PDCLIB_INT_LEAST32_PREFIX, o ) )
