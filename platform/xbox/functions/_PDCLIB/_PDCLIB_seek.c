@@ -18,7 +18,7 @@
 
 int _PDCLIB_w32errno( DWORD werror );
 
-_PDCLIB_int64_t _PDCLIB_seek( struct _PDCLIB_file_t * stream, _PDCLIB_int64_t offset, int whence )
+_PDCLIB_int_least64_t _PDCLIB_seek( struct _PDCLIB_file_t * stream, _PDCLIB_int_least64_t offset, int whence )
 {
     int method;
     switch ( whence )

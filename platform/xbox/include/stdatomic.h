@@ -11,7 +11,7 @@
 #error This implementation of stdatomic.h requires the Clang compiler!
 #endif
 
-#include <pdclib/_PDCLIB_int.h>
+#include <pdclib/_PDCLIB_internal.h>
 
 #define ATOMIC_BOOL_LOCK_FREE __CLANG_ATOMIC_BOOL_LOCK_FREE
 #define ATOMIC_CHAR_LOCK_FREE __CLANG_ATOMIC_CHAR_LOCK_FREE
@@ -71,14 +71,14 @@ typedef _Atomic unsigned long long atomic_ullong;
 //typedef _Atomic ? atomic_char16_t;
 //typedef _Atomic ? atomic_char32_t;
 typedef _Atomic _PDCLIB_wchar_t atomic_wchar_t;
-typedef _Atomic _PDCLIB_int8_t atomic_int_least8_t;
-typedef _Atomic _PDCLIB_uint8_t atomic_uint_least8_t;
-typedef _Atomic _PDCLIB_int16_t atomic_int_least16_t;
-typedef _Atomic _PDCLIB_uint16_t atomic_uint_least16_t;
-typedef _Atomic _PDCLIB_int32_t atomic_int_least32_t;
-typedef _Atomic _PDCLIB_uint32_t atomic_uint_least32_t;
-typedef _Atomic _PDCLIB_int64_t atomic_int_least64_t;
-typedef _Atomic _PDCLIB_uint64_t atomic_uint_least64_t;
+typedef _Atomic _PDCLIB_int_least8_t atomic_int_least8_t;
+typedef _Atomic _PDCLIB_uint_least8_t atomic_uint_least8_t;
+typedef _Atomic _PDCLIB_int_least16_t atomic_int_least16_t;
+typedef _Atomic _PDCLIB_uint_least16_t atomic_uint_least16_t;
+typedef _Atomic _PDCLIB_int_least32_t atomic_int_least32_t;
+typedef _Atomic _PDCLIB_uint_least32_t atomic_uint_least32_t;
+typedef _Atomic _PDCLIB_int_least64_t atomic_int_least64_t;
+typedef _Atomic _PDCLIB_uint_least64_t atomic_uint_least64_t;
 typedef _Atomic _PDCLIB_int_fast8_t atomic_int_fast8_t;
 typedef _Atomic _PDCLIB_uint_fast8_t atomic_uint_fast8_t;
 typedef _Atomic _PDCLIB_int_fast16_t atomic_int_fast16_t;

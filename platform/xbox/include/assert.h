@@ -4,7 +4,7 @@
    Permission is granted to use, modify, and / or redistribute at will.
 */
 
-#include "pdclib/_PDCLIB_aux.h"
+#include "pdclib/_PDCLIB_internal.h"
 
 #ifdef __cplusplus
 extern "C" {
