@@ -1,5 +1,5 @@
 /* Internal PDCLib configuration <_PDCLIB_config.h>
-   (Generic Template)
+   ("Example" platform target, for PDCLib development)
 
    This file is part of the Public Domain C Library (PDCLib).
    Permission is granted to use, modify, and / or redistribute at will.
@@ -12,8 +12,12 @@
 /* Misc                                                                       */
 /* -------------------------------------------------------------------------- */
 
-/* The character (sequence) your platform uses as newline.                    */
-#define _PDCLIB_endl "\n"
+/* Helper macros also documented in _PDCLIB_internal.h, but defined here as   */
+/* they are needed in this file already.                                      */
+/* _PDCLIB_cc( x, y ) concatenates two preprocessor tokens without extending. */
+/* _PDCLIB_concat( x, y ) concatenates two preprocessor tokens with extending */
+#define _PDCLIB_cc( x, y )     x ## y
+#define _PDCLIB_concat( x, y ) _PDCLIB_cc( x, y )
 
 /* exit() can signal success to the host environment by the value of zero or  */
 /* the constant EXIT_SUCCESS. Failure is signaled by EXIT_FAILURE. Note that  */
@@ -30,7 +34,8 @@
 /* Define this to some compiler directive that can be written after the       */
 /* parameter list of a function declaration to indicate the function does     */
 /* never return. If your compiler does not support such a directive, define   */
-/* to nothing. (This is to avoid warnings with the exit functions under GCC.) */
+/* to nothing. (This is to avoid warnings with the exit functions under GCC   */
+/* when compiling with C99/C++ settings, where C11 _Noreturn is unavailable.) */
 #define _PDCLIB_NORETURN __attribute__(( noreturn ))
 
 /* -------------------------------------------------------------------------- */
@@ -42,33 +47,159 @@
 /* -------------------------------------------------------------------------- */
 /* Integers                                                                   */
 /* -------------------------------------------------------------------------- */
-/* Assuming 8-bit char, two's-complement architecture here. 'short' being     */
-/* 16 bit, 'int' being either 16, 32 or 64 bit, 'long' being either 32 or 64  */
-/* bit (but 64 bit only if 'int' is 32 bit), and 'long long' being 64 bit if  */
-/* 'long' is not, 64 or 128 bit otherwise.                                    */
-/* Author is quite willing to support other systems but would like to hear of */
-/* interest in such support and details on the to-be-supported architecture   */
-/* first, before going to lengths about it.                                   */
+/* The defines below make use of predefines offered by GCC and clang. If you  */
+/* adapt PDCLib for a different compiler family, you will have to use what    */
+/* that compiler provides, or enter actual values.                            */
 /* -------------------------------------------------------------------------- */
 
-/* Set to 0 if your 'char' type is unsigned.                                  */
+/* At the point of writing, PDCLib makes no provisions for, nor has it been   */
+/* tested, on a platform that uses signed magnitude or one's complement to    */
+/* encode its integers. Most importantly, there are no guarantees that the    */
+/* negative zero of those encodings is in any form handled gracefully.        */
+#define _PDCLIB_TWOS_COMPLEMENT 1
+
+/* 1234 for little endian, 4321 for big endian; other types not supported.    */
+#define _PDCLIB_ENDIANESS __BYTE_ORDER__
+
+/* Calculation of a minimum value from a given maximum for two's complement.  */
+/* (For convenience only, used only in this header file below.)               */
+#define _PDCLIB_MIN_CALC( max ) ( ( - max ) - 1 )
+
+/* Now, introducting the various predefines to the _PDCLIB_* namespace, so    */
+/* the rest of PDCLib can work with that and adapting to a different compiler */
+/* will require changes only in this one file.                                */
+
+/* Bits in a char */
+#define _PDCLIB_CHAR_BIT __CHAR_BIT__
+
+/* Maximum and minimum values of signed / unsigned char                       */
+#define _PDCLIB_SCHAR_MAX __SCHAR_MAX__
+#define _PDCLIB_SCHAR_MIN _PDCLIB_MIN_CALC( __SCHAR_MAX__ )
+#define _PDCLIB_UCHAR_MAX ( __SCHAR_MAX__ * 2 + 1 )
+
+/* Whether the 'char' type is unsigned                                        */
 #ifdef __CHAR_UNSIGNED__
-#define _PDCLIB_CHAR_SIGNED 0
+#define _PDCLIB_CHAR_MAX _PDCLIB_UCHAR_MAX
+#define _PDCLIB_CHAR_MIN 0
 #else
-#define _PDCLIB_CHAR_SIGNED 1
+#define _PDCLIB_CHAR_MAX _PDCLIB_SCHAR_MAX
+#define _PDCLIB_CHAR_MIN _PDCLIB_SCHAR_MIN
 #endif
 
-/* Width of the integer types short, int, long, and long long, in bytes.      */
-/* SHRT == 2, INT >= SHRT, LONG >= INT >= 4, LLONG >= LONG - check your       */
-/* compiler manuals.                                                          */
-#define _PDCLIB_SHRT_BYTES  2
-#define _PDCLIB_INT_BYTES   4
-#ifdef __LP64__
-#define _PDCLIB_LONG_BYTES  8
-#else
-#define _PDCLIB_LONG_BYTES  4
-#endif
-#define _PDCLIB_LLONG_BYTES 8
+/* Maximum and minimum values of signed / unsigned short                      */
+#define _PDCLIB_SHRT_MAX __SHRT_MAX__
+#define _PDCLIB_SHRT_MIN _PDCLIB_MIN_CALC( __SHRT_MAX__ )
+#define _PDCLIB_USHRT_MAX ( __SHRT_MAX__ * 2u + 1 )
+
+/* Maximum and minimum values of signed / unsigned int                        */
+#define _PDCLIB_INT_MAX __INT_MAX__
+#define _PDCLIB_INT_MIN _PDCLIB_MIN_CALC( __INT_MAX__ )
+#define _PDCLIB_UINT_MAX ( __INT_MAX__ * 2u + 1 )
+
+/* Maximum and minimum values of signed / unsigned long                       */
+#define _PDCLIB_LONG_MAX __LONG_MAX__
+#define _PDCLIB_LONG_MIN _PDCLIB_MIN_CALC( __LONG_MAX__ )
+#define _PDCLIB_ULONG_MAX ( __LONG_MAX__ * 2ul + 1 )
+
+/* Maximum and minimum values of signed / unsigned long long                  */
+#define _PDCLIB_LLONG_MAX __LONG_LONG_MAX__
+#define _PDCLIB_LLONG_MIN _PDCLIB_MIN_CALC( __LONG_LONG_MAX__ )
+#define _PDCLIB_ULLONG_MAX ( __LONG_LONG_MAX__ * 2ull + 1 )
+
+/* -------------------------------------------------------------------------- */
+/* <stdint.h> defines a set of integer types that are of a minimum width, and */
+/* "usually fastest" on the system. (If, for example, accessing a single char */
+/* requires the CPU to access a complete int and then mask out the char, the  */
+/* "usually fastest" type of at least 8 bits would be int, not char.)         */
+/* If you do not have information on the relative performance of the types,   */
+/* the standard allows you to define any type that meets minimum width and    */
+/* signedness requirements.                                                   */
+/* The first define is the appropriate basic type (e.g. "long int"), second   */
+/* its max value, the third its min value (both expressed in the given type). */
+/* The same follows for the unsigned type (for which the minimum value is     */
+/* obviously zero and need not be defined).                                   */
+/* There *are* predefines provided for the printf()/scanf() length specifiers */
+/* but tunneling them through here would have added many lines of repetitive  */
+/* and mostly redundant defines. They are determined in <_PDCLIB_internal.h>. */
+/* -------------------------------------------------------------------------- */
+
+/* int_fast8_t / uint_fast8_t                                                 */
+#define _PDCLIB_int_fast8_t        int
+#define _PDCLIB_INT_FAST8_MAX      _PDCLIB_INT_MAX
+#define _PDCLIB_INT_FAST8_MIN      _PDCLIB_INT_MIN
+#define _PDCLIB_uint_fast8_t       unsigned int
+#define _PDCLIB_UINT_FAST8_MAX     _PDCLIB_UINT_MAX
+
+/* int_least8_t / uint_least8_t                                               */
+#define _PDCLIB_int_least8_t       signed char
+#define _PDCLIB_INT_LEAST8_MAX     _PDCLIB_SCHAR_MAX
+#define _PDCLIB_INT_LEAST8_MIN     _PDCLIB_SCHAR_MIN
+#define _PDCLIB_uint_least8_t      unsigned char
+#define _PDCLIB_UINT_LEAST8_MAX    _PDCLIB_UCHAR_MAX
+
+/* int_fast16_t / uint_fast16_t                                               */
+#define _PDCLIB_int_fast16_t       int
+#define _PDCLIB_INT_FAST16_MAX     _PDCLIB_INT_MAX
+#define _PDCLIB_INT_FAST16_MIN     _PDCLIB_INT_MIN
+#define _PDCLIB_uint_fast16_t      unsigned int
+#define _PDCLIB_UINT_FAST16_MAX    _PDCLIB_UINT_MAX
+
+/* int_least16_t / uint_least16_t                                             */
+#define _PDCLIB_int_least16_t      short
+#define _PDCLIB_INT_LEAST16_MAX    _PDCLIB_SHRT_MAX
+#define _PDCLIB_INT_LEAST16_MIN    _PDCLIB_SHRT_MIN
+#define _PDCLIB_uint_least16_t     unsigned short
+#define _PDCLIB_UINT_LEAST16_MAX   _PDCLIB_USHRT_MAX
+
+/* int_fast32_t / uint_fast32_t                                               */
+#define _PDCLIB_int_fast32_t       int
+#define _PDCLIB_INT_FAST32_MAX     _PDCLIB_INT_MAX
+#define _PDCLIB_INT_FAST32_MIN     _PDCLIB_INT_MIN
+#define _PDCLIB_uint_fast32_t      unsigned int
+#define _PDCLIB_UINT_FAST32_MAX    _PDCLIB_UINT_MAX
+
+/* int_least32_t / uint_least32_t                                             */
+#define _PDCLIB_int_least32_t      int
+#define _PDCLIB_INT_LEAST32_MAX    _PDCLIB_INT_MAX
+#define _PDCLIB_INT_LEAST32_MIN    _PDCLIB_INT_MIN
+#define _PDCLIB_uint_least32_t     unsigned int
+#define _PDCLIB_UINT_LEAST32_MAX   _PDCLIB_UINT_MAX
+
+/* int_fast64_t / uint_fast64_t                                               */
+#define _PDCLIB_int_fast64_t       long long
+#define _PDCLIB_INT_FAST64_MAX     _PDCLIB_LLONG_MAX
+#define _PDCLIB_INT_FAST64_MIN     _PDCLIB_LLONG_MIN
+#define _PDCLIB_uint_fast64_t      unsigned long long
+#define _PDCLIB_UINT_FAST64_MAX    _PDCLIB_ULLONG_MAX
+
+/* int_least64_t / uint_least64_t                                             */
+#define _PDCLIB_int_least64_t      long long
+#define _PDCLIB_INT_LEAST64_MAX    _PDCLIB_LLONG_MAX
+#define _PDCLIB_INT_LEAST64_MIN    _PDCLIB_LLONG_MIN
+#define _PDCLIB_uint_least64_t     unsigned long long
+#define _PDCLIB_UINT_LEAST64_MAX   _PDCLIB_ULLONG_MAX
+
+/* Exact-width integer types. These are *optional*. If your platform does not */
+/* support types of these exact widths in two's complement encoding, just     */
+/* leave them undefined.                                                      */
+#define _PDCLIB_int8_t   signed char
+#define _PDCLIB_int16_t  short
+#define _PDCLIB_int32_t  int
+#define _PDCLIB_int64_t  long long
+#define _PDCLIB_uint8_t  unsigned char
+#define _PDCLIB_uint16_t unsigned short
+#define _PDCLIB_uint32_t unsigned int
+#define _PDCLIB_uint64_t unsigned long long
+
+/* INTn_C / UINTn_C macros to define int_leastN_t / uint_leastN_t literals.   */
+#define _PDCLIB_INT_LEAST8_C( c )   c
+#define _PDCLIB_UINT_LEAST8_C( c )  c
+#define _PDCLIB_INT_LEAST16_C( c )  c
+#define _PDCLIB_UINT_LEAST16_C( c ) c
+#define _PDCLIB_INT_LEAST32_C( c )  c
+#define _PDCLIB_UINT_LEAST32_C( c ) c##u
+#define _PDCLIB_INT_LEAST64_C( c )  c##ll
+#define _PDCLIB_UINT_LEAST64_C( c ) c##ull
 
 /* <stdlib.h> defines the div() function family that allows taking quotient   */
 /* and remainder of an integer division in one operation. Many platforms      */
@@ -95,110 +226,107 @@ struct _PDCLIB_lldiv_t
 };
 
 /* -------------------------------------------------------------------------- */
-/* <stdint.h> defines a set of integer types that are of a minimum width, and */
-/* "usually fastest" on the system. (If, for example, accessing a single char */
-/* requires the CPU to access a complete int and then mask out the char, the  */
-/* "usually fastest" type of at least 8 bits would be int, not char.)         */
-/* If you do not have information on the relative performance of the types,   */
-/* the standard allows you to define any type that meets minimum width and    */
-/* signedness requirements.                                                   */
-/* The defines below are just configuration for the real typedefs and limit   */
-/* definitions done in <_PDCLIB_int.h>. The uppercase define shall be either  */
-/* SHRT, INT, LONG, or LLONG (telling which values to use for the *_MIN and   */
-/* *_MAX limits); the lowercase define either short, int, long, or long long  */
-/* (telling the actual type to use).                                          */
-/* The third define is the length modifier used for the type in printf() and  */
-/* scanf() functions (used in <inttypes.h>).                                  */
-/* If you require a non-standard datatype to define the "usually fastest"     */
-/* types, PDCLib as-is doesn't support that. Please contact the author with   */
-/* details on your platform in that case, so support can be added.            */
+/* What follows are a couple of "special" typedefs and their limits.          */
 /* -------------------------------------------------------------------------- */
 
-#define _PDCLIB_FAST8 INT
-#define _PDCLIB_fast8 int
-#define _PDCLIB_FAST8_CONV
+/* The result type of substracting two pointers                               */
+#define _PDCLIB_ptrdiff_t   int
+#define _PDCLIB_PTRDIFF_MAX _PDCLIB_INT_MAX
+#define _PDCLIB_PTRDIFF_MIN _PDCLIB_INT_MIN
 
-#define _PDCLIB_FAST16 INT
-#define _PDCLIB_fast16 int
-#define _PDCLIB_FAST16_CONV
+/* An integer type that can be accessed as atomic entity (think asynchronous  */
+/* interrupts). In a freestanding environment, the type itself need not be    */
+/* defined, but its limits must. (Don't ask.)                                 */
+#define _PDCLIB_sig_atomic_t   int
+#define _PDCLIB_SIG_ATOMIC_MAX _PDCLIB_INT_MAX
+#define _PDCLIB_SIG_ATOMIC_MIN _PDCLIB_INT_MIN
 
-#define _PDCLIB_FAST32 INT
-#define _PDCLIB_fast32 int
-#define _PDCLIB_FAST32_CONV
+/* Result type of the 'sizeof' operator (must be unsigned).                   */
+/* Note: In <stdint.h>, this is taken as the base for RSIZE_MAX, the limit    */
+/* for the bounds-checking interfaces of Annex K. The recommendation by the   */
+/* standard is to use ( SIZE_MAX >> 1 ) when "targeting machines with large   */
+/* addess spaces", whereas small address spaces should use SIZE_MAX directly. */
+#define _PDCLIB_size_t   unsigned int
+#define _PDCLIB_SIZE_MAX _PDCLIB_UINT_MAX
 
-#define _PDCLIB_FAST64 LLONG
-#define _PDCLIB_fast64 long long
-#define _PDCLIB_FAST64_CONV l
+/* Large enough an integer to hold all character codes of the widest          */
+/* supported locale.                                                          */
+#define _PDCLIB_wchar_t   unsigned short
+#define _PDCLIB_WCHAR_MAX _PDCLIB_USHRT_MAX
+#define _PDCLIB_WCHAR_MIN 0
 
-/* -------------------------------------------------------------------------- */
-/* What follows are a couple of "special" typedefs and their limits. Again,   */
-/* the actual definition of the limits is done in <_PDCLIB_int.h>, and the    */
-/* defines here are merely "configuration". See above for details.            */
-/* -------------------------------------------------------------------------- */
+/* Large enough an integer to hold all character codes of the widest          */
+/* supported locale plus WEOF (which needs not to be equal to EOF, nor needs  */
+/* to be of negative value).                                                  */
+#define _PDCLIB_wint_t   unsigned short
+#define _PDCLIB_WINT_MAX _PDCLIB_USHRT_MAX
+#define _PDCLIB_WINT_MIN 0
 
-/* The result type of substracting two pointers */
-#define _PDCLIB_ptrdiff int
-#define _PDCLIB_PTRDIFF INT
-#define _PDCLIB_PTR_CONV l
-
-/* An integer type that can be accessed as atomic entity (think asynchronous
-   interrupts). The type itself is not defined in a freestanding environment,
-   but its limits are. (Don't ask.)
-*/
-#define _PDCLIB_sig_atomic int
-#define _PDCLIB_SIG_ATOMIC INT
-
-/* Result type of the 'sizeof' operator (must be unsigned) */
-#define _PDCLIB_size unsigned int
-#define _PDCLIB_SIZE UINT
-
-/* Large enough an integer to hold all character codes of the largest supported
-   locale.
-*/
-#define _PDCLIB_wchar unsigned short
-#define _PDCLIB_WCHAR UINT16
-
-/* Large enough an integer to hold all character codes of the largest supported
-   locale plus WEOF (which needs not to be equal to EOF, nor needs to be of
-   negative value).
-*/
-#define _PDCLIB_wint unsigned short
-#define _PDCLIB_WINT UINT16
-
-/* (Signed) integer type capable of taking the (cast) value of a void *, and
-   having the value cast back to void *, comparing equal to the original.
-*/
-#define _PDCLIB_intptr long
-#define _PDCLIB_INTPTR LONG
+/* Integer types capable of taking the (cast) value of a void *, and having   */
+/* the value cast back to void *, comparing equal to the original.            */
+#define _PDCLIB_intptr_t     long
+#define _PDCLIB_INTPTR_MAX   _PDCLIB_LONG_MAX
+#define _PDCLIB_INTPTR_MIN   _PDCLIB_LONG_MIN
+#define _PDCLIB_uintptr_t    unsigned long
+#define _PDCLIB_UINTPTR_MAX  _PDCLIB_ULONG_MAX
 
 /* Largest supported integer type. Implementation note: see _PDCLIB_atomax(). */
-#define _PDCLIB_intmax long long int
-#define _PDCLIB_INTMAX LLONG
-#define _PDCLIB_MAX_CONV ll
-/* You are also required to state the literal suffix for the intmax type      */
-#define _PDCLIB_INTMAX_LITERAL ll
+#define _PDCLIB_intmax_t     long long int
+#define _PDCLIB_INTMAX_MAX   _PDCLIB_LLONG_MAX
+#define _PDCLIB_INTMAX_MIN   _PDCLIB_LLONG_MIN
+#define _PDCLIB_INTMAX_C( c ) c##ll
+#define _PDCLIB_uintmax_t    unsigned long long int
+#define _PDCLIB_UINTMAX_MAX  _PDCLIB_ULLONG_MAX
+#define _PDCLIB_UINTMAX_C( c ) c##ull
 
 /* <inttypes.h> defines imaxdiv(), which is equivalent to the div() function  */
 /* family (see further above) with intmax_t as basis.                         */
 
 struct _PDCLIB_imaxdiv_t
 {
-    _PDCLIB_intmax quot;
-    _PDCLIB_intmax rem;
+    _PDCLIB_intmax_t quot;
+    _PDCLIB_intmax_t rem;
 };
 
 /* -------------------------------------------------------------------------- */
-/* Time types                                                                 */
+/* Time types, limits, constants, and paths                                   */
 /* -------------------------------------------------------------------------- */
 
-/* See <time.h> for a couple of comments on these types and their semantics. */
+/* _PDCLIB_time is the type for type_t; _PDCLIB_clock for clock_t. Both types */
+/* are defined as "real types capable of representing times". The "range and  */
+/* precision of times representable" is implementation-defined.               */
 
-#define _PDCLIB_time long
-
-#define _PDCLIB_clock unsigned int
+/* For clock_t, the standard defines that dividing the result of clock() by   */
+/* CLOCKS_PER_SEC gives the seconds elapsed.                                  */
+#define _PDCLIB_clock_t unsigned int
 #define _PDCLIB_CLOCKS_PER_SEC 1000
 
+/* For time_t, no such divider exists. Most implementations use a count of    */
+/* seconds since a specified epoch. While PDCLib really should support other  */
+/* encodings as well, for now "count of seconds" is the only supported one.   */
+/* MIN / MAX values for time_t are not required by the standard (and they are */
+/* not "exported" from the _PDCLIB namespace), but they are useful in support */
+/* of the _tzcode implementation.                                             */
+#define _PDCLIB_time_t long
+#define _PDCLIB_TIME_MAX _PDCLIB_LONG_MAX
+#define _PDCLIB_TIME_MIN _PDCLIB_LONG_MIN
+
+/* "Unix time" uses 1970-01-01T00:00:00 as "epoch". If your system uses a     */
+/* different "zero point" for its timestamps, set this to the offset between  */
+/* your epoch and Unix epoch. (For example, NTP uses 1900-01-01T00:00:00 as   */
+/* epoch, giving an offset of (70 * 365 + 17) * 86400 = 220898800 seconds.)   */
+#define _PDCLIB_EPOCH_BIAS INT64_C( 0 )
+
+/* Leave this alone for now.                                                  */
 #define _PDCLIB_TIME_UTC 1
+
+/* Path to TZ data.                                                           */
+/* There is no time zone database on the Xbox. With empty paths the lookup    */
+/* fails right away and UTC is used.                                          */
+#define _PDCLIB_TZDIR ""
+
+/* Path to default (local) timezone                                           */
+#define _PDCLIB_TZDEFAULT ""
 
 /* -------------------------------------------------------------------------- */
 /* Floating Point                                                             */
@@ -210,22 +338,137 @@ struct _PDCLIB_imaxdiv_t
 */
 #define _PDCLIB_FLT_ROUNDS -1
 
-/* Whether the implementation uses exact-width precision (0), promotes float
-   to double (1), or promotes float and double to long double (2). (-1)
-   signifies indeterminable behaviour, any other value implementation-specific
-   behaviour.
-*/
-#define _PDCLIB_FLT_EVAL_METHOD -1
+/* Check <float.h> for explanations on each of these values.                  */
+#define _PDCLIB_FLT_EVAL_METHOD   __FLT_EVAL_METHOD__
 
-/* "Number of the decimal digits (n), such that any floating-point number in the
-   widest supported floating type with p(max) radix (b) digits can be rounded to
-   a floating-point number with (n) decimal digits and back again without change
-   to the value p(max) log(10)b if (b) is a power of 10, [1 + p(max) log(10)b]
-   otherwise."
-   64bit IEC 60559 double format (53bit mantissa) is DECIMAL_DIG 17.
-   80bit IEC 60559 double-extended format (64bit mantissa) is DECIMAL_DIG 21.
+#define _PDCLIB_FLT_HAS_SUBNORM   __FLT_HAS_DENORM__
+#define _PDCLIB_DBL_HAS_SUBNORM   __DBL_HAS_DENORM__
+#define _PDCLIB_LDBL_HAS_SUBNORM  __LDBL_HAS_DENORM__
+
+#define _PDCLIB_FLT_RADIX         __FLT_RADIX__
+
+#define _PDCLIB_FLT_MANT_DIG      __FLT_MANT_DIG__
+#define _PDCLIB_DBL_MANT_DIG      __DBL_MANT_DIG__
+#define _PDCLIB_LDBL_MANT_DIG     __LDBL_MANT_DIG__
+
+#define _PDCLIB_FLT_DECIMAL_DIG   __FLT_DECIMAL_DIG__
+#define _PDCLIB_DBL_DECIMAL_DIG   __DBL_DECIMAL_DIG__
+#define _PDCLIB_LDBL_DECIMAL_DIG  __LDBL_DECIMAL_DIG__
+
+#define _PDCLIB_DECIMAL_DIG       __DECIMAL_DIG__
+
+#define _PDCLIB_FLT_DIG           __FLT_DIG__
+#define _PDCLIB_DBL_DIG           __DBL_DIG__
+#define _PDCLIB_LDBL_DIG          __LDBL_DIG__
+
+#define _PDCLIB_FLT_MIN_EXP       __FLT_MIN_EXP__
+#define _PDCLIB_DBL_MIN_EXP       __DBL_MIN_EXP__
+#define _PDCLIB_LDBL_MIN_EXP      __LDBL_MIN_EXP__
+
+#define _PDCLIB_FLT_MIN_10_EXP    __FLT_MIN_10_EXP__
+#define _PDCLIB_DBL_MIN_10_EXP    __DBL_MIN_10_EXP__
+#define _PDCLIB_LDBL_MIN_10_EXP   __LDBL_MIN_10_EXP__
+
+#define _PDCLIB_FLT_MAX_EXP       __FLT_MAX_EXP__
+#define _PDCLIB_DBL_MAX_EXP       __DBL_MAX_EXP__
+#define _PDCLIB_LDBL_MAX_EXP      __LDBL_MAX_EXP__
+
+#define _PDCLIB_FLT_MAX_10_EXP    __FLT_MAX_10_EXP__
+#define _PDCLIB_DBL_MAX_10_EXP    __DBL_MAX_10_EXP__
+#define _PDCLIB_LDBL_MAX_10_EXP   __LDBL_MAX_10_EXP__
+
+#define _PDCLIB_FLT_MAX           __FLT_MAX__
+#define _PDCLIB_DBL_MAX           __DBL_MAX__
+#define _PDCLIB_LDBL_MAX          __LDBL_MAX__
+
+#define _PDCLIB_FLT_EPSILON       __FLT_EPSILON__
+#define _PDCLIB_DBL_EPSILON       __DBL_EPSILON__
+#define _PDCLIB_LDBL_EPSILON      __LDBL_EPSILON__
+
+#define _PDCLIB_FLT_MIN           __FLT_MIN__
+#define _PDCLIB_DBL_MIN           __DBL_MIN__
+#define _PDCLIB_LDBL_MIN          __LDBL_MIN__
+
+#define _PDCLIB_FLT_TRUE_MIN      __FLT_DENORM_MIN__
+#define _PDCLIB_DBL_TRUE_MIN      __DBL_DENORM_MIN__
+#define _PDCLIB_LDBL_TRUE_MIN     __LDBL_DENORM_MIN__
+
+#if __FLT_HAS_INFINITY__ == 1
+#define _PDCLIB_HUGE_VALF         (__FLT_MAX__ * 2)
+#else
+#define _PDCLIB_HUGE_VALF         __FLT_MAX__
+#endif
+
+#if __DBL_HAS_INFINITY__ == 1
+#define _PDCLIB_HUGE_VAL          (__DBL_MAX__ * 2)
+#else
+#define _PDCLIB_HUGE_VAL          __DBL_MAX__
+#endif
+
+#if __LDBL_HAS_INFINITY__ == 1
+#define _PDCLIB_HUGE_VALL         (__LDBL_MAX__ * 2)
+#else
+#define _PDCLIB_HUGE_VALL         __LDBL_MAX__
+#endif
+
+/* Macros for deconstructing floating point values                            */
+/* This assumes that the floating point value has been memcpy'd into an array */
+/* of _PDCLIB_bigint_digit_t (see _PDCLIB_bigint_from_*dbl.c with the array   */
+/* passed to the macro as parameter.                                          */
+#define _PDCLIB_FLT_SIGN( data ) ( ( data[1] & 0x8000 ) >> 15 )
+#define _PDCLIB_FLT_EXP( data ) ( ( data[1] & 0x7f80 ) >> 7 )
+#define _PDCLIB_FLT_SIZE( data ) ( data[1] &= 0x007f, 2 )
+
+#define _PDCLIB_DBL_SIGN( data ) ( ( data[3] & 0x8000 ) >> 15 )
+#define _PDCLIB_DBL_EXP( data ) ( ( data[3] & 0x7ff0u ) >> 4 )
+#define _PDCLIB_DBL_SIZE( data ) ( data[3] &= 0x000fu, 4 )
+
+/* Most platforms today use IEEE 754 single precision for 'float', and double */
+/* precision for 'double'. But type 'long double' varies. We use what the     */
+/* compiler states about LDBL_MANT_DIG to determine the type.                 */
+#if _PDCLIB_LDBL_MANT_DIG == 64
+
+/* Intel "Extended Precision" format, using 80 bits (64bit mantissa) */
+#define _PDCLIB_LDBL_SIGN( data ) ( ( data[4] & 0x8000u ) >> 15 )
+#define _PDCLIB_LDBL_EXP( data ) ( data[4] & 0x7fffu )
+#define _PDCLIB_LDBL_SIZE( data ) ( data[3] &= 0x7fffu, 4 )
+
+#elif _PDCLIB_LDBL_MANT_DIG == 113
+
+/* IEEE "Quadruple Precision" format, using 128 bits (113bit mantissa) */
+#define _PDCLIB_LDBL_SIGN( data ) ( ( data[7] & 0x8000u ) >> 15 )
+#define _PDCLIB_LDBL_EXP( data ) ( data[7] & 0x7fffu )
+#define _PDCLIB_LDBL_SIZE( data ) 7
+
+#else
+
+/* IEEE "Double Precision" format, using 64 bits (53bit mantissa) */
+/* (Same as DBL above) */
+#define _PDCLIB_LDBL_SIGN( data ) ( ( data[3] & 0x8000 ) >> 15 )
+#define _PDCLIB_LDBL_EXP( data ) ( ( data[3] & 0x7ff0u ) >> 4 )
+#define _PDCLIB_LDBL_SIZE( data ) ( data[3] &= 0x000fu, 4 )
+
+#endif
+
+/* Given the definitions for *_MANT_START above, which resolve to "pointer
+   to most dignificant byte of mantissa", the operand to use to get at the
+   less significant bytes. (That would be - for i386, x86_64, and ARM.)
 */
-#define _PDCLIB_DECIMAL_DIG 17
+#define _PDCLIB_FLT_OP -
+
+/* -------------------------------------------------------------------------- */
+/* Big Integer Arithmetic                                                     */
+/* -------------------------------------------------------------------------- */
+/* In support of the floating point converstions required by printf() etc.,   */
+/* PDCLib provides rudimentary big integer arithmetics. The _PDCLIB_bigint_t  */
+/* type stores values in a sequence of integer "digits", which may be of any  */
+/* uint_leastN_t type with N being 32 or 16. Note that multiplication and     */
+/* division require the help of the next larger type. So set the define to    */
+/* 32 if efficient 64bit integer arithmetics are available on your platform,  */
+/* and to 16 otherwise.                                                       */
+/* (The value range of _PDCLIB_bigint_t is not affected by this setting.)     */
+
+#define _PDCLIB_BIGINT_DIGIT_BITS 16
 
 /* -------------------------------------------------------------------------- */
 /* Platform-dependent macros defined by the standard headers.                 */
@@ -524,15 +767,11 @@ typedef void *_PDCLIB_fd_t;
 
 /* The default path where PDCLib should look for its locale data.             */
 /* Must end with the appropriate separator character.                         */
-#define _PDCLIB_LOCALE_PATH "/usr/share/pdclib/i18n"
+#define _PDCLIB_LOCALE_PATH "/usr/share/pdclib/i18n/"
 
 /* The name of the environment variable that can be used to override that     */
 /* path setting.                                                              */
 #define _PDCLIB_LOCALE_PATH_ENV PDCLIB_I18N
-
-#ifdef __CYGWIN__
-typedef unsigned int wint_t;
-#endif
 
 /* threads ------------------------------------------------------------------ */
 typedef void *_PDCLIB_thrd_t;
